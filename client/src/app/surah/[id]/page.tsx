@@ -1,7 +1,5 @@
 import { notFound } from 'next/navigation';
-import SurahHeader from '@/components/SurahHeader';
-import AyahCard from '@/components/AyahCard';
-import OfflineSync from '@/components/OfflineSync';
+import SurahPageClient from './SurahPageClient';
 
 async function getSurah(id: string) {
     try {
@@ -26,8 +24,9 @@ async function getSurah(id: string) {
     }
 }
 
-export default async function SurahPage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = await params; // Await params for Next.js 15+
+export default async function SurahPage({ params, searchParams }: { params: Promise<{ id: string }>, searchParams: Promise<{ view?: string }> }) {
+    const { id } = await params;
+    const { view } = await searchParams;
     const data = await getSurah(id);
 
     if (!data) {
@@ -36,49 +35,5 @@ export default async function SurahPage({ params }: { params: Promise<{ id: stri
 
     const { info, verses } = data;
 
-    return (
-        <div className="min-h-screen pb-32">
-            <SurahHeader
-                surahId={Number(id)}
-                surahName={info.name_simple}
-                translatedName={info.translated_name.name}
-                verseCount={info.verses_count}
-            />
-
-            <OfflineSync
-                surahId={Number(id)}
-                surahData={data}
-            />
-
-            <div className="max-w-4xl mx-auto px-4 pt-20 sm:pt-28">
-                <div className="text-center mb-16">
-                    <h1 className="text-7xl font-uthmani mb-6 text-emerald-600 dark:text-primary leading-relaxed">
-                        {info.name_arabic}
-                    </h1>
-                    <div className="flex flex-col items-center gap-2">
-                        <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-                            {info.name_simple}
-                        </h2>
-                        <div className="flex items-center gap-3">
-                            <span className="h-px w-8 bg-emerald-500/30" />
-                            <p className="text-lg font-medium text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em]">
-                                {info.translated_name.name} • {info.verses_count} Ayahs
-                            </p>
-                            <span className="h-px w-8 bg-emerald-500/30" />
-                        </div>
-                    </div>
-                </div>
-                {verses.map((verse: any) => (
-                    <AyahCard
-                        key={verse.id}
-                        surahNumber={Number(id)}
-                        ayahNumber={Number(verse.verse_key.split(':')[1])}
-                        textUthmani={verse.text_uthmani}
-                        trans={verse.translations?.find((t: any) => t.resource_id === 131)?.text?.replace(/<[^>]*>?/gm, '') || verse.translations?.[0]?.text?.replace(/<[^>]*>?/gm, '')}
-                        surahVerseCount={info.verses_count}
-                    />
-                ))}
-            </div>
-        </div>
-    );
+    return <SurahPageClient id={id} view={view} info={info} verses={verses} />;
 }

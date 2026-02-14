@@ -110,8 +110,11 @@ const GlobalAudioEngine = () => {
         if (isRepeatAyah && audioRef.current) {
             audioRef.current.currentTime = 0;
             audioRef.current.play();
-        } else {
+        } else if (currentAyah && currentSurahVerses && currentAyah < currentSurahVerses) {
             actions.nextAyah();
+        } else {
+            // Last ayah audio finished - just pause
+            actions.pause();
         }
     };
 

@@ -1,95 +1,141 @@
 'use client';
 
-import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAudioStore } from '@/store/audioStore';
 import { useSurahCache } from '@/hooks/useSurahCache';
-import { ArrowLeft, Book, Eye, EyeOff, Download, CheckCircle2, CloudDownload, Loader2 } from 'lucide-react';
+import { useAuthStore } from '@/store/authStore';
+import { ArrowLeft, Eye, EyeOff, Download, CheckCircle2, User, Loader2, Heart, Play } from 'lucide-react';
 import clsx from 'clsx';
 import { motion } from 'framer-motion';
-
-// Dynamically import ReciterSelect removed
 
 interface SurahHeaderProps {
     surahId: number;
     surahName: string;
     translatedName: string;
     verseCount: number;
+    onReadClick?: () => void;
 }
 
-export default function SurahHeader({ surahId, surahName, translatedName, verseCount }: SurahHeaderProps) {
+export default function SurahHeader({ surahId, surahName, translatedName, verseCount, onReadClick }: SurahHeaderProps) {
+    const router = useRouter();
     const { isReadingMode, actions, reciterUrl, cachingSurahId, cachingProgress } = useAudioStore();
     const { downloadSurah } = useSurahCache();
+    const { user, isAuthenticated, toggleLike } = useAuthStore();
 
     const isCaching = cachingSurahId === surahId && cachingProgress < 100;
     const isDone = cachingSurahId === surahId && cachingProgress === 100;
+    const isLiked = (user?.liked_surahs || []).includes(surahId);
 
     return (
-        <header className="sticky top-0 z-[60] bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800">
-            <div className="max-w-7xl mx-auto px-3 sm:px-4 h-14 sm:h-20 flex items-center justify-between gap-2 sm:gap-4">
-                <div className="flex items-center gap-2 sm:gap-4 overflow-hidden">
+        <motion.header
+            initial={{ y: -100 }}
+            animate={{ y: 0 }}
+            transition={{ type: "spring", stiffness: 100, damping: 20 }}
+            className="sticky top-0 z-[60] bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border-b border-white/20 dark:border-white/5 shadow-lg shadow-black/5"
+        >
+            <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4 flex-1 min-w-0">
                     <Link
                         href="/surahs"
-                        className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-all font-bold flex items-center gap-2 shrink-0"
+                        className="group p-2.5 rounded-xl bg-slate-100/50 dark:bg-slate-800/50 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all active:scale-95"
                     >
-                        <ArrowLeft size={18} className="sm:w-5 sm:h-5" />
-                        <span className="hidden md:inline">Back</span>
+                        <ArrowLeft size={20} className="group-hover:-translate-x-0.5 transition-transform" />
                     </Link>
 
-                    <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 hidden xs:block" />
+                    <div className="h-8 w-px bg-slate-200 dark:bg-slate-800 hidden xs:block" />
 
-                    <div className="flex items-center gap-2 sm:gap-3 overflow-hidden">
-                        <div className="overflow-hidden min-w-0">
-                            <h1 className="text-sm sm:text-lg font-bold text-slate-900 dark:text-white leading-tight truncate">
+                    <div className="flex items-center gap-4 min-w-0">
+                        <div className="flex flex-col">
+                            <h1 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white leading-none truncate">
                                 {surahName}
                             </h1>
-                            <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium tracking-wide truncate">
-                                {translatedName}
+                            <p className="text-xs text-slate-500 dark:text-slate-400 font-bold tracking-wide mt-1 truncate">
+                                {translatedName} • {verseCount} Ayahs
                             </p>
                         </div>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-3 shrink-0">
+                    <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => downloadSurah(surahId, reciterUrl, verseCount)}
+                        disabled={isCaching}
+                        className={clsx(
+                            "hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all border",
+                            isDone
+                                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                                : isCaching
+                                    ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-transparent hover:bg-slate-200 dark:hover:bg-slate-700"
+                        )}
+                    >
+                        {isDone ? (
+                            <>
+                                <CheckCircle2 size={18} />
+                                <span className="hidden lg:inline">Offline Ready</span>
+                            </>
+                        ) : isCaching ? (
+                            <>
+                                <Loader2 size={18} className="animate-spin" />
+                                <span className="hidden lg:inline">{cachingProgress}%</span>
+                            </>
+                        ) : (
+                            <>
+                                <Download size={18} />
+                                <span className="hidden lg:inline">Download</span>
+                            </>
+                        )}
+                    </motion.button>
+
+                    {/* Read Mode Button */}
+                    <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={onReadClick}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors border border-transparent"
+                    >
+                        <Eye size={18} />
+                        <span className="hidden lg:inline">Read</span>
+                    </motion.button>
+
+                    <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-slate-100/50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700/50">
+                        <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => {
+                                if (isAuthenticated) {
+                                    toggleLike(surahId);
+                                }
+                            }}
+                            className={clsx(
+                                "p-2 rounded-xl transition-all",
+                                isLiked
+                                    ? "bg-white dark:bg-slate-700 text-rose-500 shadow-sm"
+                                    : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                            )}
+                        >
+                            <Heart size={20} fill={isLiked ? "currentColor" : "none"} />
+                        </motion.button>
 
                         <motion.button
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
-                            onClick={() => downloadSurah(surahId, reciterUrl, verseCount)}
-                            disabled={isCaching}
+                            onClick={() => actions.toggleReadingMode()}
                             className={clsx(
-                                "hidden sm:flex p-1.5 sm:p-2 rounded-lg transition-all border shrink-0",
-                                isDone
-                                    ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-                                    : isCaching
-                                        ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
-                                        : "bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-slate-500 border-transparent hover:text-emerald-500"
+                                "p-2 rounded-xl transition-all",
+                                isReadingMode
+                                    ? "bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm"
+                                    : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
                             )}
-                            title="Download Surah for Offline Use"
                         >
-                            {isDone ? (
-                                <CheckCircle2 size={16} className="sm:w-[18px] sm:h-[18px]" />
-                            ) : isCaching ? (
-                                <Loader2 size={16} className="animate-spin sm:w-[18px] sm:h-[18px]" />
-                            ) : (
-                                <Download size={16} className="sm:w-[18px] sm:h-[18px]" />
-                            )}
+                            {isReadingMode ? <Eye size={20} /> : <EyeOff size={20} />}
                         </motion.button>
                     </div>
                 </div>
-
-                <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-                    <button
-                        onClick={() => actions.toggleReadingMode()}
-                        className={clsx(
-                            "flex items-center justify-center p-2 sm:px-4 sm:py-2 rounded-xl border transition-all duration-300 font-bold text-sm",
-                            isReadingMode
-                                ? "bg-emerald-500 text-white border-emerald-400 shadow-lg shadow-emerald-500/20"
-                                : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 border-transparent hover:bg-slate-200 dark:hover:bg-white/10"
-                        )}
-                        title={isReadingMode ? "Disable Reading Mode" : "Enable Reading Mode"}
-                    >
-                        {isReadingMode ? <Eye size={18} /> : <EyeOff size={18} />}
-                        <span className="hidden lg:inline ml-2">Reading Mode</span>
-                    </button>
-                </div>
             </div>
-        </header>
+        </motion.header>
     );
 }

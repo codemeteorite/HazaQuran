@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useAudioStore } from '@/store/audioStore';
-import { Play, Pause, BookOpen, Bookmark, BookmarkCheck } from 'lucide-react';
+import { useAuthStore } from '@/store/authStore';
+import { Play, Pause, BookOpen, Bookmark, Check, Copy, Share2, MoreHorizontal } from 'lucide-react';
 import clsx from 'clsx';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -15,28 +16,32 @@ interface AyahCardProps {
     surahVerseCount: number;
 }
 
-const formatTime = (seconds: number) => {
-    if (!seconds || isNaN(seconds)) return '0:00';
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-};
-
-const AyahCard = ({
+export default function AyahCard({
     surahNumber,
     ayahNumber,
     textUthmani,
     trans,
     tafsir,
     surahVerseCount
-}: AyahCardProps) => {
-    const { isPlaying, currentSurah, currentAyah, actions, progress, duration, isAutoscrollDisabled, isReadingMode, bookmarks } = useAudioStore();
+}: AyahCardProps) {
+    const { isPlaying, currentSurah, currentAyah, actions, progress, duration, isAutoscrollDisabled, isReadingMode } = useAudioStore();
+    const { bookmarks, toggleBookmark } = useAuthStore();
     const cardRef = useRef<HTMLDivElement>(null);
 
     const isActive = currentSurah === surahNumber && currentAyah === ayahNumber;
-    const isBookmarked = bookmarks.includes(`${surahNumber}:${ayahNumber}`);
-    const [showTafsir, setShowTafsir] = useState(false);
+    const isBookmarked = (bookmarks || []).some(b => b.surahId === surahNumber && b.ayahNumber === ayahNumber);
+    const isLastAyah = ayahNumber === surahVerseCount;
+    const [showActions, setShowActions] = useState(false);
+    const [copied, setCopied] = useState(false);
 
+    // Trigger celebration when last ayah is viewed
+    const handleViewportEnter = () => {
+        if (isLastAyah) {
+            actions.setSurahCompleted(true);
+        }
+    };
+
+    // Auto-scroll logic
     useEffect(() => {
         if (isActive && cardRef.current && !isAutoscrollDisabled) {
             cardRef.current.scrollIntoView({
@@ -46,216 +51,156 @@ const AyahCard = ({
         }
     }, [isActive, isAutoscrollDisabled]);
 
-    const ayahProgress = isActive && duration > 0 ? (progress / duration) * 100 : 0;
+    const handlePlayPause = () => {
+        if (isActive && isPlaying) {
+            actions.pause();
+        } else {
+            actions.play(surahNumber, ayahNumber, surahVerseCount);
+        }
+    };
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(`${textUthmani}\n\n${trans} [${surahNumber}:${ayahNumber}]`);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
 
     return (
         <motion.div
+            id={`ayah-${surahNumber}-${ayahNumber}`}
             ref={cardRef}
             initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            onViewportEnter={handleViewportEnter}
+            transition={{ duration: 0.5 }}
             className={clsx(
-                "relative group overflow-hidden rounded-3xl p-8 mb-6 transition-all duration-300",
+                "relative group rounded-[2.5rem] p-6 sm:p-10 mb-8 transition-all duration-500",
                 isActive
-                    ? "bg-gradient-to-br from-emerald-50/50 to-white dark:from-emerald-950/40 dark:to-slate-900/80 border-2 border-emerald-500/30 shadow-[0_0_40px_-5px_rgba(16,185,129,0.15)]"
-                    : "bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-white/10 hover:border-emerald-500/20 shadow-sm hover:shadow-md"
+                    ? "bg-white/80 dark:bg-slate-900/80 shadow-[0_0_50px_-10px_rgba(16,185,129,0.2)] dark:shadow-[0_0_50px_-10px_rgba(16,185,129,0.1)] border-2 border-emerald-500/30 ring-4 ring-emerald-500/5 backdrop-blur-xl"
+                    : "bg-white/40 dark:bg-slate-900/40 hover:bg-white/60 dark:hover:bg-slate-900/60 border border-slate-200/50 dark:border-white/5 hover:border-emerald-500/20 shadow-sm backdrop-blur-sm"
             )}
+            onMouseEnter={() => setShowActions(true)}
+            onMouseLeave={() => setShowActions(false)}
         >
-            {/* Active ayah progress bar */}
+            {/* Active Glow Ambient */}
             {isActive && (
-                <div className="absolute top-0 left-0 right-0 h-1 bg-slate-800 overflow-hidden">
-                    <motion.div
-                        className="h-full bg-gradient-to-r from-emerald-500 to-cyan-500"
-                        initial={{ width: '0%' }}
-                        animate={{ width: `${ayahProgress}%` }}
-                        transition={{ duration: 0.1 }}
-                    />
-                </div>
+                <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-br from-emerald-500/5 via-cyan-500/5 to-purple-500/5 pointer-events-none" />
             )}
 
-            {/* Glow effects */}
-            <div className={clsx(
-                "absolute -top-20 -right-20 w-40 h-40 rounded-full blur-3xl transition-opacity duration-500",
-                isActive
-                    ? "opacity-30 bg-emerald-500/30"
-                    : "opacity-0 group-hover:opacity-20 bg-emerald-500/20"
-            )} />
-
-            <div className="relative z-10">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-8">
-                    <div className="flex items-center gap-4">
-                        <motion.div
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            className={clsx(
-                                "relative w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg border-2 transition-all duration-300",
-                                isActive
-                                    ? "bg-gradient-to-br from-emerald-500 to-emerald-600 text-white border-emerald-400 shadow-lg shadow-emerald-500/30"
-                                    : "bg-slate-800/50 text-slate-400 border-slate-700 group-hover:border-emerald-500/50"
-                            )}
-                        >
+            <div className="relative z-10 flex flex-col gap-8">
+                {/* Header: Number & Actions */}
+                <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className={clsx(
+                            "w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-sm sm:text-base font-bold transition-all duration-300",
+                            isActive
+                                ? "bg-gradient-to-br from-emerald-500 to-cyan-600 text-white shadow-lg shadow-emerald-500/30"
+                                : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-emerald-100/50 dark:group-hover:bg-emerald-500/20 group-hover:text-emerald-600 dark:group-hover:text-emerald-400"
+                        )}>
                             {ayahNumber}
-                            {isActive && isPlaying && (
-                                <motion.div
-                                    animate={{ scale: [1, 1.2, 1] }}
-                                    transition={{ repeat: Infinity, duration: 1 }}
-                                    className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-500"
-                                />
-                            )}
-                        </motion.div>
-
-                        <div>
-                            <h3 className="font-bold text-slate-900 dark:text-white text-lg">
-                                Surah {surahNumber} • Ayah {ayahNumber}
-                            </h3>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">
-                                {isActive ? (isPlaying ? 'Now Playing' : 'Paused') : 'Click to play'}
-                            </p>
                         </div>
+                        {isBookmarked && (
+                            <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                className="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"
+                            >
+                                <Bookmark size={16} fill="currentColor" />
+                            </motion.div>
+                        )}
                     </div>
 
-                    {/* Action buttons */}
-                    <div className="flex items-center gap-2">
-                        {/* Play/Pause */}
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() =>
-                                isActive && isPlaying
-                                    ? actions.pause()
-                                    : actions.play(surahNumber, ayahNumber, surahVerseCount)
-                            }
+                    <div className="flex gap-2">
+                        <button
+                            onClick={handlePlayPause}
                             className={clsx(
-                                "w-12 h-12 rounded-full flex items-center justify-center border transition-all relative overflow-hidden group",
-                                isActive && isPlaying
-                                    ? "bg-red-500/20 text-red-400 border-red-500/30 hover:bg-red-500/30"
-                                    : "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20"
+                                "p-2.5 rounded-xl transition-all duration-300",
+                                isActive
+                                    ? "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                                    : "bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 sm:opacity-0 group-hover:opacity-100"
                             )}
                         >
-                            <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                            {isActive && isPlaying ? (
-                                <Pause size={20} className="relative z-10" />
-                            ) : (
-                                <Play size={20} className="relative z-10 ml-0.5" />
-                            )}
-                        </motion.button>
-
-                        {/* Bookmark Toggle */}
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => actions.toggleBookmark(surahNumber, ayahNumber)}
-                            className={clsx(
-                                "w-10 h-10 rounded-lg flex items-center justify-center border transition-colors",
-                                isBookmarked
-                                    ? "bg-amber-500/20 text-amber-500 border-amber-500/30 shadow-lg shadow-amber-500/10"
-                                    : "bg-slate-800/50 text-slate-400 border-slate-700 hover:border-amber-500/30"
-                            )}
-                        >
-                            {isBookmarked ? <BookmarkCheck size={18} /> : <Bookmark size={18} />}
-                        </motion.button>
-
-                        {/* Tafsir toggle */}
-                        {tafsir && (
-                            <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                onClick={() => setShowTafsir(!showTafsir)}
-                                className={clsx(
-                                    "w-10 h-10 rounded-lg flex items-center justify-center border transition-colors",
-                                    showTafsir
-                                        ? "bg-purple-500/20 text-purple-400 border-purple-500/30"
-                                        : "bg-slate-800/50 text-slate-400 border-slate-700 hover:border-purple-500/30"
-                                )}
-                            >
-                                <BookOpen size={18} />
-                            </motion.button>
-                        )}
-
+                            {isActive && isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" />}
+                        </button>
                     </div>
                 </div>
-            </div>
 
-            {/* Quran Text */}
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="mb-8"
-            >
-                <p
-                    dir="rtl"
+                {/* Arabic Text */}
+                <div
                     className={clsx(
-                        "text-4xl leading-relaxed font-uthmani text-right mb-6 transition-colors",
-                        isActive ? "text-slate-900 dark:text-white" : "text-slate-700 dark:text-slate-300"
+                        "text-right leading-[1.8] sm:leading-[2.2] font-uthmani transition-all duration-500",
+                        isActive
+                            ? "text-slate-900 dark:text-white drop-shadow-sm scale-[1.02]"
+                            : "text-slate-800 dark:text-slate-200"
                     )}
+                    style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)' }}
                 >
                     {textUthmani}
-                </p>
+                </div>
 
-                {trans && !isReadingMode && (
-                    <div className="border-l-4 border-emerald-500/30 pl-6 py-2">
-                        <p className="text-lg text-slate-600 dark:text-slate-300 leading-relaxed italic">
-                            "{trans}"
-                        </p>
-                    </div>
-                )}
-            </motion.div>
-
-            {/* Tafsir section */}
-            <AnimatePresence>
-                {showTafsir && tafsir && (
+                {/* Translation */}
+                {!isReadingMode && trans && (
                     <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="overflow-hidden"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className={clsx(
+                            "text-lg sm:text-xl leading-relaxed transition-colors duration-300 pl-4 border-l-4",
+                            isActive
+                                ? "text-slate-700 dark:text-slate-300 border-emerald-500/50"
+                                : "text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800"
+                        )}
                     >
-                        <div className="bg-slate-100 dark:bg-slate-900/50 rounded-xl p-6 border border-emerald-500/10 dark:border-purple-500/20">
-                            <div className="flex items-center gap-2 mb-4">
-                                <BookOpen size={18} className="text-emerald-600 dark:text-purple-400" />
-                                <h4 className="font-bold text-emerald-900 dark:text-purple-300">Tafsir</h4>
-                            </div>
-                            <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
-                                {tafsir}
-                            </p>
-                        </div>
+                        {trans}
                     </motion.div>
                 )}
-            </AnimatePresence>
 
-            {/* Audio timeline for active ayah */}
-            {isActive && (
+                {/* Bottom Actions Bar */}
                 <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mt-6 pt-6 border-t border-white/10"
+                    className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                 >
-                    <div className="flex items-center justify-between text-sm text-slate-500 mb-2 font-mono">
-                        <span>{formatTime(progress)}</span>
-                        <span>{formatTime(duration)}</span>
-                    </div>
-                    <div
-                        onClick={(e) => {
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            const clickX = e.clientX - rect.left;
-                            const percentage = (clickX / rect.width) * 100;
-                            const newTime = (percentage / 100) * duration;
-                            actions.seek(newTime);
-                        }}
-                        className="h-2 bg-slate-800 rounded-full overflow-hidden cursor-pointer"
+                    <button
+                        onClick={() => toggleBookmark(String(surahNumber), String(ayahNumber))}
+                        className={clsx(
+                            "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all",
+                            isBookmarked
+                                ? "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"
+                                : "bg-slate-50 dark:bg-slate-800/50 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                        )}
                     >
+                        <Bookmark size={16} fill={isBookmarked ? "currentColor" : "none"} />
+                        {isBookmarked ? "Saved" : "Save"}
+                    </button>
+
+                    <button
+                        onClick={handleCopy}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-slate-50 dark:bg-slate-800/50 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+                    >
+                        {copied ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
+                        {copied ? "Copied" : "Copy"}
+                    </button>
+
+                    <button className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+                        <Share2 size={16} />
+                    </button>
+
+                    <button className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+                        <MoreHorizontal size={16} />
+                    </button>
+                </motion.div>
+
+                {/* Active Progress Line */}
+                {isActive && duration > 0 && (
+                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-100 dark:bg-slate-800 overflow-hidden rounded-b-[2.5rem]">
                         <motion.div
                             className="h-full bg-gradient-to-r from-emerald-500 to-cyan-500"
                             initial={{ width: '0%' }}
-                            animate={{ width: `${ayahProgress}%` }}
+                            animate={{ width: `${(progress / duration) * 100}%` }}
+                            transition={{ ease: "linear", duration: 0.1 }}
                         />
                     </div>
-                </motion.div>
-            )}
+                )}
+            </div>
         </motion.div>
     );
-};
-
-export default AyahCard;
+}

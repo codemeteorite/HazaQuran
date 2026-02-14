@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
+import { RECITERS } from '@/store/audioStore';
 import clsx from 'clsx';
 
 export default function ProfilePage() {
@@ -162,7 +163,7 @@ export default function ProfilePage() {
                         { label: 'Spiritual Hours', value: `${totalHours}h ${remainingMins}m`, icon: Clock, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
                         { label: 'Current Streak', value: `${user.current_streak || 0} Days`, icon: Flame, color: 'text-orange-500', bg: 'bg-orange-500/10' },
                         { label: 'Hasanat Earned', value: hasanath.toLocaleString(), icon: Sparkles, color: 'text-yellow-500', bg: 'bg-yellow-500/10' },
-                        { label: 'Saved Ayahs', value: (user.saved_ayahs?.length || 0).toString(), icon: Bookmark, color: 'text-cyan-500', bg: 'bg-cyan-500/10' },
+                        { label: 'Saved Ayahs', value: (user.saved_ayah?.length || 0).toString(), icon: Bookmark, color: 'text-cyan-500', bg: 'bg-cyan-500/10' },
                     ].map((stat, i) => (
                         <motion.div
                             key={stat.label}
@@ -181,34 +182,8 @@ export default function ProfilePage() {
                 </section>
 
                 {/* Extended Details Section */}
-                <section className="grid md:grid-cols-2 gap-8">
-                    {/* Insights */}
-                    <div className="glass-card p-8 rounded-[2rem] border border-slate-200/50 dark:border-slate-800/50 space-y-6">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-500">
-                                <Settings size={20} />
-                            </div>
-                            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Insights</h3>
-                        </div>
+                <section className="space-y-8 bg-transparent">
 
-                        <div className="space-y-4">
-                            <div className="p-4 rounded-2xl bg-slate-100/50 dark:bg-slate-800/30 border border-slate-200/50 dark:border-slate-700/50">
-                                <div className="text-xs font-black text-slate-500 uppercase tracking-widest mb-1">Most Listened Surah</div>
-                                <div className="text-lg font-bold text-slate-900 dark:text-white">
-                                    {user.most_listened_surah ?
-                                        surahList.find(s => s.id === user.most_listened_surah)?.name_simple || 'Surah #' + user.most_listened_surah
-                                        : 'Not yet recorded'}
-                                </div>
-                            </div>
-                            <div className="p-4 rounded-2xl bg-slate-100/50 dark:bg-slate-800/30 border border-slate-200/50 dark:border-slate-700/50">
-                                <div className="text-xs font-black text-slate-500 uppercase tracking-widest mb-1">Favorite Reciter</div>
-                                <div className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                    <Music size={16} className="text-emerald-500" />
-                                    {user.favorite_reciter || 'Not yet recorded'}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
                     {/* Quick Stats */}
                     <div className="glass-card p-8 rounded-[2rem] border border-slate-200/50 dark:border-slate-800/50 bg-gradient-to-br from- emerald-500/5 to-cyan-500/5">
@@ -281,11 +256,11 @@ export default function ProfilePage() {
                                 <h3 className="text-xl font-bold text-slate-900 dark:text-white">Saved Ayahs</h3>
                             </div>
                             <span className="text-xs font-black bg-cyan-500/10 text-cyan-500 px-3 py-1 rounded-full uppercase tracking-widest">
-                                {user.saved_ayahs?.length || 0}
+                                {user.saved_ayah?.length || 0}
                             </span>
                         </div>
                         <div className="grid gap-3">
-                            {(user.saved_ayahs || []).slice(0, 5).map((ayah: any, i: number) => {
+                            {(user.saved_ayah || []).slice(0, 3).map((ayah: any, i: number) => {
                                 const surah = surahList.find(s => s.id === ayah.surahId);
                                 return (
                                     <button
@@ -303,7 +278,15 @@ export default function ProfilePage() {
                                     </button>
                                 );
                             })}
-                            {(!user.saved_ayahs || user.saved_ayahs.length === 0) && (
+                            {(user.saved_ayah?.length || 0) > 3 && (
+                                <button
+                                    onClick={() => router.push('/profile/saved-ayahs')}
+                                    className="w-full py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                                >
+                                    View All Saved Ayahs
+                                </button>
+                            )}
+                            {(!user.saved_ayah || user.saved_ayah.length === 0) && (
                                 <div className="p-8 rounded-[2rem] border border-dashed border-slate-200 dark:border-slate-800 text-center text-slate-400 font-medium">
                                     No saved ayahs yet. Jewels of wisdom await!
                                 </div>

@@ -7,6 +7,7 @@
   },
   "devDependencies": {
     "autoprefixer": "^10.4.24",
+    "concurrently": "^9.2.1",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.18"
   },
@@ -14,10 +15,19 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+     "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\""
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/codemeteorite/HazaQuran.git"
+  },
+  "bugs": {
+    "url": "https://github.com/codemeteorite/HazaQuran/issues"
+  },
+  "homepage": "https://github.com/codemeteorite/HazaQuran#readme",
   "description": ""
 }

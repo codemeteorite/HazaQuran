@@ -27,8 +27,11 @@ interface AudioState {
     isReadingMode: boolean;
     bookmarks: string[]; // "surah:ayah" format
     favoriteReciters: string[]; // IDs
+    isAppBackground: boolean;
+    isSurahCompleted: boolean;
     actions: {
         play: (surah: number, ayah: number, verseCount: number) => void;
+        setSurahCompleted: (completed: boolean) => void;
         pause: () => void;
         setReciter: (url: string) => void;
         nextAyah: () => void;
@@ -44,6 +47,7 @@ interface AudioState {
         setAutoscrollDisabled: (disabled: boolean) => void;
         toggleReadingMode: () => void;
         toggleBookmark: (surah: number, ayah: number) => void;
+        syncBookmarks: (savedAyahs: any[]) => void;
         toggleFavoriteReciter: (id: string) => void;
     };
 }
@@ -53,6 +57,8 @@ export const useAudioStore = create<AudioState>()((set, get) => ({
     currentSurah: null,
     currentAyah: null,
     currentSurahVerses: null,
+    isSurahCompleted: false,
+    isAppBackground: false,
     reciterUrl: RECITERS.maher.url,
     isRepeatAyah: false,
     playbackSpeed: 1,
@@ -68,7 +74,8 @@ export const useAudioStore = create<AudioState>()((set, get) => ({
     bookmarks: typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('hazaquran-bookmarks') || '[]') : [],
     favoriteReciters: typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('hazaquran-favorite-reciters') || '[]') : [],
     actions: {
-        play: (surah: number, ayah: number, verseCount: number) => set({ isPlaying: true, currentSurah: surah, currentAyah: ayah, currentSurahVerses: verseCount, isCollapsed: false }),
+        setSurahCompleted: (completed: boolean) => set({ isSurahCompleted: completed }),
+        play: (surah: number, ayah: number, verseCount: number) => set({ isPlaying: true, currentSurah: surah, currentAyah: ayah, currentSurahVerses: verseCount, isCollapsed: false, isSurahCompleted: false }),
         pause: () => set({ isPlaying: false }),
         setReciter: (url: string) => set({ reciterUrl: url }),
         toggleRepeatAyah: () => set((state) => ({ isRepeatAyah: !state.isRepeatAyah })),
@@ -101,6 +108,14 @@ export const useAudioStore = create<AudioState>()((set, get) => ({
             const newBookmarks = state.bookmarks.includes(id)
                 ? state.bookmarks.filter(b => b !== id)
                 : [...state.bookmarks, id];
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('hazaquran-bookmarks', JSON.stringify(newBookmarks));
+            }
+            return { bookmarks: newBookmarks };
+        }),
+        syncBookmarks: (savedAyahs: any[]) => set(() => {
+            if (!Array.isArray(savedAyahs)) return { bookmarks: [] };
+            const newBookmarks = savedAyahs.map(a => `${a.surahId}:${a.ayahNumber}`);
             if (typeof window !== 'undefined') {
                 localStorage.setItem('hazaquran-bookmarks', JSON.stringify(newBookmarks));
             }

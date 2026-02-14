@@ -5,21 +5,24 @@ import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Search,
-    BookOpen,
     Grid3x3,
     List,
-    Filter,
-    ArrowLeft
+    ArrowLeft,
+    Heart,
+    MapPin,
+    Sparkles,
+    TrendingUp,
+    X,
+    Filter
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import clsx from 'clsx';
 import { useAuthStore } from '@/store/authStore';
-
-// ReciterSelect removed
+import { FloatingParticles, CornerFlourish, IslamicStar } from '@/components/patterns';
 
 const SurahCard = dynamic(() => import('@/components/SurahCard').then(mod => mod.SurahCard), {
     ssr: false,
-    loading: () => <div className="h-40 sm:h-48 md:h-56 rounded-xl sm:rounded-2xl bg-slate-100/50 dark:bg-slate-800/50 animate-pulse" />
+    loading: () => <div className="h-64 rounded-[2.5rem] bg-slate-100/50 dark:bg-slate-800/50 animate-pulse" />
 });
 
 export default function SurahsPage() {
@@ -29,22 +32,12 @@ export default function SurahsPage() {
     const [sortBy, setSortBy] = useState('id');
     const [filterType, setFilterType] = useState('all');
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-    const [favorites, setFavorites] = useState<number[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [showFilters, setShowFilters] = useState(false);
-    const { init } = useAuthStore();
+    const { init, user, toggleLike } = useAuthStore();
 
     useEffect(() => {
         init();
         fetchSurahs();
-        const savedFavorites = localStorage.getItem('quran-favorites');
-        if (savedFavorites) {
-            try {
-                setFavorites(JSON.parse(savedFavorites));
-            } catch (e) {
-                console.error('Failed to parse favorites:', e);
-            }
-        }
     }, []);
 
     const fetchSurahs = async () => {
@@ -53,13 +46,27 @@ export default function SurahsPage() {
             const res = await fetch('https://api.quran.com/api/v4/chapters', {
                 cache: 'force-cache'
             });
+            if (!res.ok) throw new Error(`API returned ${res.status}`);
             const data = await res.json();
-            setSurahs(data.chapters);
+            setSurahs(data.chapters || []);
         } catch (error) {
             console.error('Failed to fetch surahs:', error);
+            setSurahs([]);
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const isFavorite = (surahId: number) => {
+        return user?.liked_surahs?.includes(surahId) || false;
+    };
+
+    const handleToggleFavorite = (surahId: number) => {
+        if (!user) {
+            // Optional: Show login modal or toast
+            return;
+        }
+        toggleLike(surahId);
     };
 
     const filteredSurahs = surahs
@@ -71,7 +78,9 @@ export default function SurahsPage() {
 
             const matchesFilter =
                 filterType === 'all' ||
-                (filterType === 'favorites' ? favorites.includes(surah.id) : surah.revelation_place === (filterType === 'makkah' ? 'makkah' : 'madinah'));
+                (filterType === 'favorites' ? isFavorite(surah.id) :
+                    filterType === 'makkah' ? surah.revelation_place === 'makkah' :
+                        surah.revelation_place === 'madinah');
 
             return matchesSearch && matchesFilter;
         })
@@ -81,150 +90,176 @@ export default function SurahsPage() {
             return a.id - b.id;
         });
 
+    const filterOptions = [
+        { id: 'all', label: 'All Surahs', icon: Sparkles, color: 'text-slate-600 dark:text-slate-400' },
+        { id: 'favorites', label: 'Favorites', icon: Heart, color: 'text-rose-500' },
+        { id: 'makkah', label: 'Makkan', icon: MapPin, color: 'text-amber-600' },
+        { id: 'madinah', label: 'Medinan', icon: TrendingUp, color: 'text-emerald-600' }
+    ];
+
     return (
-        <div className="min-h-screen pb-32">
-            {/* Header */}
-            <header className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800">
-                <div className="max-w-7xl mx-auto px-4 h-16 sm:h-20 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                        <button
-                            onClick={() => router.push('/')}
-                            className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-all"
-                        >
-                            <ArrowLeft size={20} />
-                        </button>
-                        <h1 className="text-xl font-black bg-gradient-to-r from-emerald-600 to-cyan-500 bg-clip-text text-transparent">
-                            Browse Surahs
-                        </h1>
-                    </div>
+        <div className="min-h-screen bg-[hsl(var(--bg-luminous-start))] dark:bg-[hsl(var(--bg-twilight-start))] transition-colors duration-500 pb-32">
+
+            {/* Animated Background Elements */}
+            <div className="fixed inset-0 overflow-hidden pointer-events-none">
+                <FloatingParticles count={12} />
+                <div className="absolute top-0 right-0 opacity-20 dark:opacity-5 text-amber-500">
+                    <IslamicStar size={300} className="translate-x-1/2 -translate-y-1/2" />
                 </div>
-            </header>
+                <div className="absolute bottom-0 left-0 opacity-20 dark:opacity-5 text-emerald-500">
+                    <CornerFlourish className="w-64 h-64 text-emerald-500" />
+                </div>
+            </div>
 
-            <main className="max-w-7xl mx-auto px-4 pt-20 sm:pt-24 pb-32">
-                {/* Search & Filters */}
-                <div className="mb-10 space-y-6">
-                    <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
-                        <div className="flex-1">
-                            <div className="relative group">
-                                <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-emerald-500 transition-colors w-4.5 h-4.5 sm:w-5 sm:h-5" />
-                                <input
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    placeholder="Search surah..."
-                                    className="w-full pl-10 sm:pl-12 pr-4 py-3 sm:py-4 bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700/50 rounded-xl sm:rounded-2xl focus:outline-none focus:border-emerald-500 dark:focus:border-emerald-500/50 text-slate-900 dark:text-white transition-all text-sm sm:text-base shadow-sm font-medium"
-                                />
+            {/* Floating Header */}
+            <div className="sticky top-0 z-40 pt-4 px-4 sm:px-6">
+                <div className="max-w-7xl mx-auto bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-[2rem] border border-white/20 dark:border-white/10 shadow-lg shadow-black/5 p-4 sm:p-6 transition-all duration-300">
+
+                    {/* Top Row: Title & Actions */}
+                    <div className="flex flex-col md:flex-row gap-6 md:items-center justify-between mb-6">
+                        <div className="flex items-center gap-4">
+                            <button
+                                onClick={() => router.push('/')}
+                                className="p-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all hover:scale-105 active:scale-95"
+                            >
+                                <ArrowLeft size={20} />
+                            </button>
+                            <div>
+                                <h1 className="text-3xl font-black bg-gradient-to-r from-emerald-600 to-cyan-500 bg-clip-text text-transparent">
+                                    Discover
+                                </h1>
+                                <p className="text-sm font-bold text-slate-500 dark:text-slate-400">
+                                    {filteredSurahs.length} Surahs available
+                                </p>
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-2 sm:gap-3">
-                            <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl sm:rounded-2xl border border-slate-200/50 dark:border-slate-700/50 shadow-sm">
-                                <button
-                                    onClick={() => setViewMode('grid')}
-                                    className={clsx(
-                                        "px-3 py-2 rounded-md sm:rounded-lg flex items-center gap-1 sm:gap-2 transition-all text-sm",
-                                        viewMode === 'grid'
-                                            ? "bg-white dark:bg-slate-700 shadow-sm text-emerald-600 dark:text-emerald-400 font-semibold"
-                                            : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
-                                    )}
-                                >
-                                    <Grid3x3 size={16} />
-                                    <span className="hidden sm:inline">Grid</span>
-                                </button>
-                                <button
-                                    onClick={() => setViewMode('list')}
-                                    className={clsx(
-                                        "px-3 py-2 rounded-md sm:rounded-lg flex items-center gap-1 sm:gap-2 transition-all text-sm",
-                                        viewMode === 'list'
-                                            ? "bg-white dark:bg-slate-700 shadow-sm text-emerald-600 dark:text-emerald-400 font-semibold"
-                                            : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
-                                    )}
-                                >
-                                    <List size={16} />
-                                    <span className="hidden sm:inline">List</span>
-                                </button>
+                        {/* Search Bar */}
+                        <div className="relative flex-1 max-w-md">
+                            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                                <Search size={20} className="text-slate-400" />
                             </div>
+                            <input
+                                type="text"
+                                placeholder="Search by name or number..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full pl-12 pr-4 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-emerald-500/50 focus:bg-white dark:focus:bg-slate-900 outline-none transition-all shadow-inner font-medium text-lg placeholder:text-slate-400"
+                            />
+                            {searchQuery && (
+                                <button
+                                    onClick={() => setSearchQuery('')}
+                                    className="absolute inset-y-0 right-4 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                                >
+                                    <X size={18} />
+                                </button>
+                            )}
+                        </div>
 
-                            <select
-                                value={sortBy}
-                                onChange={(e) => setSortBy(e.target.value)}
-                                className="bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700/50 rounded-xl sm:rounded-2xl px-3 sm:px-4 py-2 sm:py-3 text-sm font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-emerald-500 transition-all shadow-sm cursor-pointer"
-                            >
-                                <option value="id">Number</option>
-                                <option value="name">Name</option>
-                                <option value="revelation">Revelation</option>
-                            </select>
+                        {/* View Toggle */}
+                        <div className="flex p-1.5 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                            {[
+                                { id: 'grid', icon: Grid3x3 },
+                                { id: 'list', icon: List }
+                            ].map((mode) => (
+                                <button
+                                    key={mode.id}
+                                    onClick={() => setViewMode(mode.id as 'grid' | 'list')}
+                                    className={clsx(
+                                        "p-3 rounded-xl transition-all duration-300",
+                                        viewMode === mode.id
+                                            ? "bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm scale-110"
+                                            : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                                    )}
+                                >
+                                    <mode.icon size={20} />
+                                </button>
+                            ))}
                         </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                        {['all', 'makkah', 'madinah', 'favorites'].map((type) => (
+                    {/* Filter Pills */}
+                    <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide mask-fade-right">
+                        {filterOptions.map((option) => (
                             <button
-                                key={type}
-                                onClick={() => setFilterType(type)}
+                                key={option.id}
+                                onClick={() => setFilterType(option.id)}
                                 className={clsx(
-                                    "px-4 sm:px-6 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all border-2 capitalize",
-                                    filterType === type
-                                        ? "bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/25"
-                                        : "bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700/50 text-slate-600 dark:text-slate-400 hover:border-emerald-500/50"
+                                    "px-5 py-2.5 rounded-xl font-bold text-sm whitespace-nowrap flex items-center gap-2 transition-all duration-300 border-2",
+                                    filterType === option.id
+                                        ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-transparent shadow-lg shadow-slate-900/10 scale-105"
+                                        : "bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-emerald-200 dark:hover:border-emerald-800"
                                 )}
                             >
-                                {type}
+                                <option.icon size={16} className={clsx(
+                                    filterType === option.id ? "text-current" : option.color
+                                )} />
+                                {option.label}
                             </button>
                         ))}
                     </div>
                 </div>
+            </div>
 
-                {/* Surah Grid/List */}
-                <div className="relative min-h-[400px]">
-                    {isLoading ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-                            {[...Array(12)].map((_, i) => (
-                                <div key={i} className="h-40 sm:h-48 md:h-56 rounded-xl sm:rounded-2xl bg-slate-100/50 dark:bg-slate-800/50 animate-pulse" />
+            {/* Surahs Grid */}
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+                {isLoading ? (
+                    <div className={clsx(
+                        "grid gap-6",
+                        viewMode === 'grid'
+                            ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3"
+                            : "grid-cols-1"
+                    )}>
+                        {[...Array(6)].map((_, i) => (
+                            <div key={i} className="h-64 rounded-[2.5rem] bg-slate-100/50 dark:bg-slate-800/50 animate-pulse" />
+                        ))}
+                    </div>
+                ) : (
+                    <div className={clsx(
+                        "grid gap-6 transition-all duration-500",
+                        viewMode === 'grid'
+                            ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3"
+                            : "grid-cols-1"
+                    )}>
+                        <AnimatePresence mode="popLayout">
+                            {filteredSurahs.map((surah, index) => (
+                                <motion.div
+                                    key={surah.id}
+                                    layout
+                                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                                    transition={{
+                                        duration: 0.4,
+                                        delay: Math.min(index * 0.05, 0.5),
+                                        ease: [0.34, 1.56, 0.64, 1]
+                                    }}
+                                >
+                                    <SurahCard
+                                        surah={surah}
+                                        isFavorite={isFavorite(surah.id)}
+                                        onToggleFavorite={() => handleToggleFavorite(surah.id)}
+                                        viewMode={viewMode}
+                                    />
+                                </motion.div>
                             ))}
+                        </AnimatePresence>
+                    </div>
+                )}
+
+                {!isLoading && filteredSurahs.length === 0 && (
+                    <div className="text-center py-20">
+                        <div className="inline-block p-6 rounded-full bg-slate-100 dark:bg-slate-800 mb-4 animate-bounce">
+                            <Search size={40} className="text-slate-400" />
                         </div>
-                    ) : filteredSurahs.length > 0 ? (
-                        <div className={clsx(
-                            viewMode === 'grid'
-                                ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6"
-                                : "flex flex-col gap-4 sm:gap-5 max-w-4xl mx-auto"
-                        )}>
-                            <AnimatePresence>
-                                {filteredSurahs.map((surah) => (
-                                    <motion.div
-                                        key={surah.id}
-                                        layout
-                                        initial={{ opacity: 0, scale: 0.95 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        exit={{ opacity: 0, scale: 0.95 }}
-                                    >
-                                        <SurahCard
-                                            surah={surah}
-                                            isFavorite={favorites.includes(surah.id)}
-                                            onToggleFavorite={() => {
-                                                setFavorites(prev =>
-                                                    prev.includes(surah.id)
-                                                        ? prev.filter(id => id !== surah.id)
-                                                        : [...prev, surah.id]
-                                                );
-                                            }}
-                                            viewMode={viewMode}
-                                        />
-                                    </motion.div>
-                                ))}
-                            </AnimatePresence>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col items-center justify-center py-20 text-center">
-                            <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6">
-                                <Search size={32} className="text-slate-400" />
-                            </div>
-                            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">No surahs found</h3>
-                            <p className="text-slate-500 dark:text-slate-400 max-w-xs">
-                                We couldn't find any surahs matching "{searchQuery}". Try a different search term.
-                            </p>
-                        </div>
-                    )}
-                </div>
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+                            No surahs moved you?
+                        </h3>
+                        <p className="text-slate-500 dark:text-slate-400">
+                            Try adjusting your search terms or filters
+                        </p>
+                    </div>
+                )}
             </main>
         </div>
     );

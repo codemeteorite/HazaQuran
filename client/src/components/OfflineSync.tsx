@@ -12,7 +12,7 @@ interface OfflineSyncProps {
 }
 
 export default function OfflineSync({ surahId, surahData }: OfflineSyncProps) {
-    const { downloadSurah, cacheSurahData } = useSurahCache();
+    const { downloadSurah } = useSurahCache();
     const { reciterUrl, cachingSurahId, cachingProgress } = useAudioStore();
     const [isSynced, setIsSynced] = useState(false);
     const [isOnline, setIsOnline] = useState(true);
@@ -29,11 +29,6 @@ export default function OfflineSync({ surahId, surahData }: OfflineSyncProps) {
         };
     }, []);
 
-    if (surahId && surahData && isOnline) {
-        // Auto-cache JSON data (minimal impact)
-        cacheSurahData(surahId, surahData);
-    }
-
     useEffect(() => {
         if (cachingSurahId === surahId && cachingProgress === 100) {
             setIsSynced(true);
@@ -47,6 +42,7 @@ export default function OfflineSync({ surahId, surahData }: OfflineSyncProps) {
         <AnimatePresence>
             {!isOnline && (
                 <motion.div
+                    key="offline-notice"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 20 }}
@@ -59,6 +55,7 @@ export default function OfflineSync({ surahId, surahData }: OfflineSyncProps) {
 
             {(cachingSurahId === surahId && cachingProgress < 100) && (
                 <motion.div
+                    key="syncing-progress"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="fixed bottom-32 left-8 z-50 px-4 py-2 rounded-xl bg-white dark:bg-slate-900 shadow-xl border border-emerald-500/20 flex items-center gap-3"
@@ -79,6 +76,7 @@ export default function OfflineSync({ surahId, surahData }: OfflineSyncProps) {
 
             {isSynced && (
                 <motion.div
+                    key="synced-ok"
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }}
