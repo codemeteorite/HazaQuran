@@ -260,7 +260,7 @@ export default function UserDashboard() {
                             <span className="font-bold text-slate-900 dark:text-white">Saved</span>
                         </div>
                         <button
-                            onClick={() => router.push('/saved-ayahs')}
+                            onClick={() => router.push('/profile/saved-ayahs')}
                             className="text-xs font-bold text-slate-400 hover:text-amber-500 transition-colors"
                         >
                             View All

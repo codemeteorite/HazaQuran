@@ -1,22 +1,443 @@
-I               maxMinutes = mins;
+import { create } from 'zustand';
+import { supabase } from '@/lib/supabase';
+import { useAudioStore } from './audioStore';
+
+interface AuthState {
+    user: any | null;
+    isAuthenticated: boolean;
+    loading: boolean;
+    init: () => Promise<void>;
+    login: (email: string, password: string) => Promise<any>;
+    register: (displayName: string, email: string, password: string) => Promise<any>;
+    logout: () => Promise<void>;
+    syncActivity: (minutes: number, surahId?: number, reciterId?: string) => Promise<any>;
+    toggleLike: (surahId: number) => Promise<void>;
+    toggleBookmark: (surahId: number, ayahNumber: number) => Promise<void>;
+    updateProfile: (updates: any) => Promise<void>;
+    updateReadingPosition: (surahNumber: number, ayahNumber: number) => Promise<void>;
+}
+
+export const useAuthStore = create<AuthState>((set, get) => ({
+    user: null,
+    isAuthenticated: false,
+    loading: true,
+
+    init: async () => {
+        try {
+            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+            if (sessionError) {
+                console.error('Session error:', sessionError);
+                set({ user: null, isAuthenticated: false, loading: false });
+                return;
+            }
+
+            if (session?.user) {
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', session.user.id)
+                    .single();
+
+                if (profileError) {
+                    console.error('Profile fetch error:', profileError);
+                    set({ user: session.user, isAuthenticated: true, loading: false });
+                } else {
+                    // Sync bookmarks with audio store
+                    if (profile.saved_ayah) {
+                        useAudioStore.getState().actions.syncBookmarks(profile.saved_ayah);
+                    }
+
+                    set({
+                        user: { ...session.user, ...profile },
+                        isAuthenticated: true,
+                        loading: false
+                    });
+
+                    // Update last activity date if needed
+                    try {
+                        const today = new Date().toISOString().split('T')[0];
+                        const lastActivity = profile?.last_activity_date;
+
+                        if (!lastActivity || lastActivity !== today) {
+                            const now = new Date().toISOString();
+                            const { data: updated, error: updErr } = await supabase
+                                .from('profiles')
+                                .update({
+                                    last_activity_date: today,
+                                    updated_at: now
+                                })
+                                .eq('id', session.user.id)
+                                .select()
+                                .single();
+                            if (!updErr && updated) {
+                                set({ user: { ...session.user, ...updated } });
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('Error updating last_activity_date:', e);
+                    }
+                }
+            } else {
+                set({ user: null, isAuthenticated: false, loading: false });
+            }
+        } catch (err) {
+            console.error('Auth init error:', err);
+            set({ user: null, isAuthenticated: false, loading: false });
+        }
+
+        // Listen for auth changes
+        supabase.auth.onAuthStateChange(async (event, session) => {
+            console.log('Auth state changed:', event, session?.user?.id);
+
+            if (session?.user) {
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', session.user.id)
+                    .single();
+
+                if (profileError) {
+                    console.error('Profile fetch error on auth change:', profileError);
+                    set({ user: session.user, isAuthenticated: true });
+                } else {
+                    if (profile.saved_ayah) {
+                        useAudioStore.getState().actions.syncBookmarks(profile.saved_ayah);
+                    }
+                    set({
+                        user: { ...session.user, ...profile },
+                        isAuthenticated: true
+                    });
+                }
+            } else {
+                set({ user: null, isAuthenticated: false });
+            }
+        });
+    },
+
+    login: async (email: string, password: string) => {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', data.user.id)
+            .single();
+
+        if (profileError) {
+            console.error('Profile fetch error on login:', profileError);
+            set({ user: data.user, isAuthenticated: true });
+        } else {
+            if (profile.saved_ayah) {
+                useAudioStore.getState().actions.syncBookmarks(profile.saved_ayah);
+            }
+            set({ user: { ...data.user, ...profile }, isAuthenticated: true });
+        }
+
+        return data;
+    },
+
+    register: async (displayName: string, email: string, password: string) => {
+        const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: {
+                    display_name: displayName,
+                    created_at: new Date().toISOString()
+                }
+            }
+        });
+        if (error) throw error;
+        return data;
+    },
+
+    logout: async () => {
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+            console.error('Logout error:', error);
+            throw error;
+        }
+        set({ user: null, isAuthenticated: false });
+    },
+
+    syncActivity: async (minutes: number, surahId?: number, reciterId?: string) => {
+        const { user, isAuthenticated } = get();
+
+        if (!isAuthenticated || !user?.id) {
+            console.warn('Cannot sync activity: User not authenticated');
+            return null;
+        }
+
+        if (minutes <= 0) {
+            return null;
+        }
+
+        try {
+            // Get fresh data from database to avoid race conditions (e.g. multi-device sync)
+            const { data: freshProfile, error: fetchError } = await supabase
+                .from('profiles')
+                .select('total_minutes, current_streak, last_activity_date, reciter_stats, surah_stats')
+                .eq('id', user.id)
+                .single();
+
+            if (fetchError) {
+                console.warn('Profile sync fallback to local state:', fetchError.message);
+                return await updateActivity(
+                    user.id,
+                    user.total_minutes || 0,
+                    user.current_streak || 0,
+                    user.last_activity_date,
+                    minutes,
+                    surahId,
+                    reciterId,
+                    set,
+                    user
+                );
+            }
+
+            return await updateActivity(
+                user.id,
+                freshProfile.total_minutes || 0,
+                freshProfile.current_streak || 0,
+                freshProfile.last_activity_date,
+                minutes,
+                surahId,
+                reciterId,
+                set,
+                { ...user, ...freshProfile }
+            );
+        } catch (err) {
+            console.error('❌ Activity sync failed:', err);
+            return null;
+        }
+    },
+
+    toggleLike: async (surahId: number) => {
+        const { user, isAuthenticated } = get();
+        if (!isAuthenticated || !user?.id) return;
+
+        try {
+            const likedSurahs = user.liked_surahs || [];
+            const newLiked = likedSurahs.includes(surahId)
+                ? likedSurahs.filter((id: number) => id !== surahId)
+                : [...likedSurahs, surahId];
+
+            const { data, error } = await supabase
+                .from('profiles')
+                .update({
+                    liked_surahs: newLiked,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', user.id)
+                .select()
+                .single();
+
+            if (error) throw error;
+            set({ user: { ...user, ...data } });
+        } catch (err) {
+            console.error('Like toggle failed:', err);
+        }
+    },
+
+    toggleBookmark: async (surahId: number, ayahNumber: number) => {
+        const { user, isAuthenticated } = get();
+        if (!isAuthenticated || !user?.id) return;
+
+        try {
+            const savedAyah = user.saved_ayah || [];
+            const exists = savedAyah.some((a: any) => a.surahId === surahId && a.ayahNumber === ayahNumber);
+
+            let newSaved;
+            if (exists) {
+                newSaved = savedAyah.filter((a: any) => !(a.surahId === surahId && a.ayahNumber === ayahNumber));
+            } else {
+                const ayahId = `ayah-${surahId}-${ayahNumber}-${Date.now()}`;
+                const newAyah = {
+                    id: ayahId,
+                    surahId,
+                    ayahNumber,
+                    savedAt: new Date().toISOString()
+                };
+                newSaved = [...savedAyah, newAyah];
+            }
+
+            const { data, error } = await supabase
+                .from('profiles')
+                .update({
+                    saved_ayah: newSaved,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', user.id)
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            // Sync with audioStore immediately
+            useAudioStore.getState().actions.syncBookmarks(newSaved);
+
+            set({ user: { ...user, ...data } });
+            console.log('✅ Bookmark toggled successfully:', { surahId, ayahNumber, total: newSaved.length });
+        } catch (err) {
+            console.error('❌ Bookmark toggle failed:', err);
+        }
+    },
+
+    updateProfile: async (updates: any) => {
+        const { user, isAuthenticated } = get();
+        if (!isAuthenticated || !user?.id) return;
+
+        try {
+            const { data, error } = await supabase
+                .from('profiles')
+                .update({
+                    ...updates,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', user.id)
+                .select()
+                .single();
+
+            if (error) throw error;
+            set({ user: { ...user, ...data } });
+        } catch (err) {
+            console.error('Profile update failed:', err);
+            throw err;
+        }
+    },
+
+    updateReadingPosition: async (surahNumber: number, ayahNumber: number) => {
+        const { user, isAuthenticated } = get();
+        if (!isAuthenticated || !user?.id) return;
+
+        try {
+            const { data, error } = await supabase
+                .from('profiles')
+                .update({
+                    last_surah_number: surahNumber,
+                    last_ayah_number: ayahNumber,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', user.id)
+                .select()
+                .single();
+
+            if (error) throw error;
+            set({ user: { ...user, ...data } });
+        } catch (err: any) {
+            console.error('Failed to update reading position:', err.message || err);
+            // Fallback: update local state anyway so UI feels responsive
+            set((state) => ({
+                user: {
+                    ...state.user,
+                    last_surah_number: surahNumber,
+                    last_ayah_number: ayahNumber
+                }
+            }));
+        }
+    }
+}));
+
+async function updateActivity(
+    userId: string,
+    currentTotalMinutes: number,
+    currentStreak: number,
+    lastActivityDate: string | null,
+    minutes: number,
+    surahId: number | undefined,
+    reciterId: string | undefined,
+    set: any,
+    user: any
+) {
+    const newMinutes = currentTotalMinutes + minutes;
+    const today = new Date().toISOString().split('T')[0];
+    const now = new Date().toISOString();
+
+    // Calculate new streak
+    let newStreak = currentStreak;
+
+    if (lastActivityDate) {
+        const lastDate = new Date(lastActivityDate);
+        const todayDate = new Date(today);
+
+        const diffTime = todayDate.getTime() - lastDate.getTime();
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 0) {
+            // Same day, keep same streak
+            newStreak = currentStreak || 1;
+        } else if (diffDays === 1) {
+            // Consecutive day, increment streak
+            newStreak = (currentStreak || 0) + 1;
+        } else {
+            // More than 1 day gap, reset streak to 1
+            newStreak = 1;
+        }
+    } else {
+        newStreak = 1;
+    }
+
+    const updates: any = {
+        total_minutes: newMinutes,
+        current_streak: newStreak,
+        last_activity_date: today,
+        updated_at: now
+    };
+
+    // Handle Reciter Stats
+    if (reciterId) {
+        const currentStats = user.reciter_stats || {};
+        const currentMinutes = currentStats[reciterId] || 0;
+        const newMinutesForReciter = currentMinutes + minutes;
+
+        updates.reciter_stats = {
+            ...currentStats,
+            [reciterId]: newMinutesForReciter
+        };
+
+        // Calculate favorite reciter
+        let maxMinutes = newMinutesForReciter;
+        let favoriteReciter = reciterId;
+
+        Object.entries(updates.reciter_stats).forEach(([id, mins]: [string, any]) => {
+            if (mins > maxMinutes) {
+                maxMinutes = mins;
                 favoriteReciter = id;
             }
         });
 
         updates.favorite_reciter = favoriteReciter;
-    } else if (user.reciter_stats) {
-        // Keep existing stats if no reciter provided this time
-        // But maybe favorite changed? Unlikely if we didn't add minutes.
     }
 
-    // Only update surah if provided
-    if (surahId !== undefined && surahId !== null) {
-        updates.most_listened_surah = surahId;
-    }
+    // Handle Surah Stats
+    if (surahId) {
+        const currentSurahStats = user.surah_stats || {};
+        const currentPlays = currentSurahStats[surahId] || 0;
+        const newPlays = currentPlays + 1;
 
-    console.log(`📊 Syncing ${minutes} minutes for user ${userId}`);
-    console.log(`Current total: ${currentTotalMinutes} → New total: ${newMinutes}`);
-    console.log('Updates:', updates);
+        updates.surah_stats = {
+            ...currentSurahStats,
+            [surahId]: newPlays
+        };
+
+        // Calculate most listened surah
+        let maxPlays = newPlays;
+        let mostListenedSurahId: string | number = surahId;
+
+        Object.entries(updates.surah_stats).forEach(([id, plays]: [string, any]) => {
+            if (plays > maxPlays) {
+                maxPlays = plays;
+                mostListenedSurahId = id;
+            }
+        });
+
+        // Convert back to number if possible
+        updates.most_listened_surah = typeof mostListenedSurahId === 'string' && !isNaN(Number(mostListenedSurahId))
+            ? Number(mostListenedSurahId)
+            : mostListenedSurahId;
+    }
 
     // Update database
     const { data, error: updateError } = await supabase
@@ -30,11 +451,6 @@ I               maxMinutes = mins;
         console.error('❌ Activity sync error:', updateError);
         throw updateError;
     }
-
-    console.log('✅ Activity synced successfully:', {
-        total_minutes: data.total_minutes,
-        current_streak: data.current_streak
-    });
 
     // Update local state
     set({ user: { ...user, ...data } });
