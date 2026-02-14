@@ -25,11 +25,11 @@ export default function AyahCard({
     surahVerseCount
 }: AyahCardProps) {
     const { isPlaying, currentSurah, currentAyah, actions, progress, duration, isAutoscrollDisabled, isReadingMode } = useAudioStore();
-    const { bookmarks, toggleBookmark } = useAuthStore();
+    const { user, toggleBookmark } = useAuthStore();
     const cardRef = useRef<HTMLDivElement>(null);
 
     const isActive = currentSurah === surahNumber && currentAyah === ayahNumber;
-    const isBookmarked = (bookmarks || []).some(b => b.surahId === surahNumber && b.ayahNumber === ayahNumber);
+    const isBookmarked = (user?.saved_ayah || []).some((b: any) => b.surahId === surahNumber && b.ayahNumber === ayahNumber);
     const isLastAyah = ayahNumber === surahVerseCount;
     const [showActions, setShowActions] = useState(false);
     const [copied, setCopied] = useState(false);
@@ -160,7 +160,7 @@ export default function AyahCard({
                     className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                 >
                     <button
-                        onClick={() => toggleBookmark(String(surahNumber), String(ayahNumber))}
+                        onClick={() => toggleBookmark(surahNumber, ayahNumber)}
                         className={clsx(
                             "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all",
                             isBookmarked
