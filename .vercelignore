@@ -1,0 +1,11 @@
+server/
+node_modules/
+.git/
+.netlify/
+build_log.txt
+build_log_2.txt
+seed_log.txt
+migration_fix.sql
+supabase_add_saved_ayahs.sql
+supabase_setup.sql
+supabase_update_profile.sql
