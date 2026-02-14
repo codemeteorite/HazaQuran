@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { Flame, Clock, Target, Trophy, ChevronRight, BarChart2, Sparkles, Bookmark, Zap } from 'lucide-react';
+import { Flame, Clock, Target, ChevronRight, BarChart2, Sparkles, Bookmark, Zap } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import clsx from 'clsx';
 import { CornerFlourish } from './patterns';

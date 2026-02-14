@@ -43,8 +43,8 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@200;300;400;600;700&display=swap" rel="stylesheet" />
 
-        {/* Uthmani font for Quran text */}
-        <link href="https://fonts.maateen.me/alkatib/alkatib-2.css" rel="stylesheet" />
+        {/* Uthmani font for Quran text - Using Google Fonts for reliability */}
+        <link href="https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet" />
 
         {/* Font Awesome for icons */}
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />

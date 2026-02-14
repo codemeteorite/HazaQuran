@@ -266,7 +266,7 @@
 
   /* Fallback definitions for fonts if Next.js fails to inject */
   .font-uthmani {
-    font-family: 'ALKatib', var(--font-amiri), serif;
+    font-family: 'Scheherazade New', 'ALKatib', var(--font-amiri), serif;
     font-weight: 400;
     line-height: 2.5;
   }

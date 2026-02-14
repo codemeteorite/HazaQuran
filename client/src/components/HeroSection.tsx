@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Sparkles, BookOpen, ArrowRight, Play } from 'lucide-react';
+import { Sparkles, BookOpen, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { IslamicStar, FloatingParticles, ArabesqueCurl, HexagonPattern } from './patterns';
 
@@ -78,7 +78,7 @@ export default function HeroSection() {
                         Immerse yourself in the divine words with a vibrant, modern experience.
                     </p>
 
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8 px-6">
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-8 pt-8 px-6">
                         <motion.button
                             onClick={() => router.push('/surahs')}
                             whileHover={{ scale: 1.05, y: -2 }}
@@ -96,7 +96,7 @@ export default function HeroSection() {
                             onClick={() => router.push('/profile')}
                             whileHover={{ scale: 1.05, y: -2 }}
                             whileTap={{ scale: 0.95 }}
-                            className="w-full sm:w-auto group px-8 py-4 rounded-3xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-md text-slate-700 dark:text-slate-200 font-bold text-lg border-2 border-slate-200/50 dark:border-slate-700/50 hover:border-emerald-500/50 dark:hover:border-emerald-500/50 shadow-lg hover:shadow-emerald-500/20 transition-all duration-300 flex items-center justify-center gap-2"
+                            className="hidden sm:flex w-full sm:w-auto group px-8 py-4 rounded-3xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-md text-slate-700 dark:text-slate-200 font-bold text-lg border-2 border-slate-200/50 dark:border-slate-700/50 hover:border-emerald-500/50 dark:hover:border-emerald-500/50 shadow-lg hover:shadow-emerald-500/20 transition-all duration-300 items-center justify-center gap-2"
                         >
                             <BookOpen size={20} className="text-emerald-500 group-hover:scale-110 transition-transform" />
                             My Collection

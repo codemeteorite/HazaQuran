@@ -6,13 +6,15 @@ import { BookOpen, Moon, Sun, User as UserIcon, Sparkles } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useRouter } from 'next/navigation';
 import clsx from 'clsx';
+
 import { useAuthStore } from '@/store/authStore';
+import { useActivityTracker } from '@/hooks/useActivityTracker';
+import { useReadingPositionTracker } from '@/hooks/useReadingPositionTracker';
+
 import AuthModal from '@/components/AuthModal';
 import UserDashboard from '@/components/UserDashboard';
 import Leaderboard from '@/components/Leaderboard';
 import HeroSection from '@/components/HeroSection';
-import { useActivityTracker } from '@/hooks/useActivityTracker';
-import { useReadingPositionTracker } from '@/hooks/useReadingPositionTracker';
 
 export default function Home() {
   const router = useRouter();
@@ -106,7 +108,7 @@ export default function Home() {
           {isAuthenticated && (
             <div className="space-y-8">
               {/* Dashboard Tabs */}
-              <div className="flex justify-center mb-8">
+              <div className="flex justify-center mb-14">
                 <div className="p-1.5 rounded-full bg-white/50 dark:bg-slate-900/50 backdrop-blur-md border border-white/20 dark:border-white/10 shadow-xl inline-flex">
                   <button
                     onClick={() => setActiveTab('dashboard')}
