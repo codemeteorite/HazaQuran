@@ -88,7 +88,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
         // Listen for auth changes
         supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log('Auth state changed:', event, session?.user?.id);
 
             if (session?.user) {
                 const { data: profile, error: profileError } = await supabase
@@ -279,7 +278,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             useAudioStore.getState().actions.syncBookmarks(newSaved);
 
             set({ user: { ...user, ...data } });
-            console.log('✅ Bookmark toggled successfully:', { surahId, ayahNumber, total: newSaved.length });
         } catch (err) {
             console.error('❌ Bookmark toggle failed:', err);
         }

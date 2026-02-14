@@ -167,7 +167,7 @@ export const SurahCard = ({ surah, isFavorite, onToggleFavorite, viewMode }: Sur
                 "bg-gradient-to-br", colors.bg, colors.bgDark,
                 "border-3", colors.border, colors.hoverBorder,
                 colors.shadow, colors.hoverShadow,
-                "p-8"
+                "p-6 sm:p-8"
             )}
             onClick={handleCardClick}
             style={{
@@ -218,26 +218,26 @@ export const SurahCard = ({ surah, isFavorite, onToggleFavorite, viewMode }: Sur
                 <motion.div
                     whileHover={{ scale: 1.1, rotate: -5 }}
                     className={clsx(
-                        "mb-6 w-20 h-20 rounded-[1.5rem] flex items-center justify-center self-start",
+                        "mb-4 sm:mb-6 w-16 h-16 sm:w-20 sm:h-20 rounded-[1.5rem] flex items-center justify-center self-start",
                         "bg-gradient-to-br", colors.accentBg,
                         "border-2", colors.border,
                         "shadow-xl"
                     )}
                 >
-                    <span className={clsx("text-2xl font-black", colors.accent)}>
+                    <span className={clsx("text-xl sm:text-2xl font-black", colors.accent)}>
                         {surah.id}
                     </span>
                 </motion.div>
 
                 {/* Surah Name */}
-                <div className="mb-6">
-                    <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">
+                <div className="mb-4 sm:mb-6">
+                    <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">
                         {surah.name_simple}
                     </h3>
-                    <p className="text-3xl font-uthmani text-slate-700 dark:text-slate-300 leading-relaxed">
+                    <p className="text-2xl sm:text-3xl font-uthmani text-slate-700 dark:text-slate-300 leading-relaxed">
                         {surah.name_arabic}
                     </p>
-                    <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mt-2">
+                    <p className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 mt-2">
                         {surah.translated_name?.name || ''}
                     </p>
                 </div>

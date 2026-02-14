@@ -122,17 +122,21 @@ export default function AudioPlayer() {
                                 <div className="flex flex-col md:flex-row items-center justify-between gap-6">
 
                                     {/* Track Info */}
-                                    <div className="flex items-center gap-4 w-full md:w-1/3">
-                                        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-100 to-cyan-100 dark:from-emerald-900/30 dark:to-cyan-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold text-lg shadow-inner">
+                                    <div className="flex items-center gap-3 w-full md:w-1/3">
+                                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-emerald-100 to-cyan-100 dark:from-emerald-900/30 dark:to-cyan-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold text-base sm:text-lg shadow-inner shrink-0">
                                             {currentSurah}
                                         </div>
-                                        <div className="min-w-0">
-                                            <h3 className="font-bold text-slate-900 dark:text-white truncate">
+                                        <div className="min-w-0 flex-1">
+                                            <h3 className="font-bold text-slate-900 dark:text-white truncate text-sm sm:text-base">
                                                 Surah {currentSurah}
                                             </h3>
-                                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                                            <p className="text-[10px] sm:text-xs font-medium text-slate-500 dark:text-slate-400 truncate">
                                                 Ayah {currentAyah} • {reciterUrl.split('/').pop()?.replace(/-/g, ' ') || 'Mishary Rashid'}
                                             </p>
+                                        </div>
+                                        {/* Mobile Reciter Select */}
+                                        <div className="md:hidden">
+                                            <ReciterSelect />
                                         </div>
                                     </div>
 

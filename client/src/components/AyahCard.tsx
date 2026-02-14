@@ -75,7 +75,7 @@ export default function AyahCard({
             onViewportEnter={handleViewportEnter}
             transition={{ duration: 0.5 }}
             className={clsx(
-                "relative group rounded-[2.5rem] p-6 sm:p-10 mb-8 transition-all duration-500",
+                "relative group rounded-[2.5rem] p-4 sm:p-10 mb-8 transition-all duration-500",
                 isActive
                     ? "bg-white/80 dark:bg-slate-900/80 shadow-[0_0_50px_-10px_rgba(16,185,129,0.2)] dark:shadow-[0_0_50px_-10px_rgba(16,185,129,0.1)] border-2 border-emerald-500/30 ring-4 ring-emerald-500/5 backdrop-blur-xl"
                     : "bg-white/40 dark:bg-slate-900/40 hover:bg-white/60 dark:hover:bg-slate-900/60 border border-slate-200/50 dark:border-white/5 hover:border-emerald-500/20 shadow-sm backdrop-blur-sm"
@@ -134,7 +134,7 @@ export default function AyahCard({
                             ? "text-slate-900 dark:text-white drop-shadow-sm scale-[1.02]"
                             : "text-slate-800 dark:text-slate-200"
                     )}
-                    style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)' }}
+                    style={{ fontSize: 'clamp(1.5rem, 5vw, 3.5rem)' }}
                 >
                     {textUthmani}
                 </div>
@@ -145,7 +145,7 @@ export default function AyahCard({
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         className={clsx(
-                            "text-lg sm:text-xl leading-relaxed transition-colors duration-300 pl-4 border-l-4",
+                            "text-sm sm:text-xl leading-relaxed transition-colors duration-300 pl-4 border-l-4",
                             isActive
                                 ? "text-slate-700 dark:text-slate-300 border-emerald-500/50"
                                 : "text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800"

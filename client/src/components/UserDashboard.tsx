@@ -92,7 +92,7 @@ export default function UserDashboard() {
                         <motion.h2
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="text-4xl font-black text-slate-900 dark:text-white tracking-tight"
+                            className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight"
                         >
                             Salem, {user.display_name || user.email?.split('@')[0]}
                         </motion.h2>
@@ -198,7 +198,7 @@ export default function UserDashboard() {
 
                     <div className="flex flex-col sm:flex-row items-center gap-8 relative z-10">
                         {/* Circular Progress */}
-                        <div className="relative w-40 h-40 flex-shrink-0">
+                        <div className="relative w-32 h-32 md:w-40 md:h-40 flex-shrink-0">
                             <svg className="w-full h-full transform -rotate-90 drop-shadow-lg">
                                 <circle
                                     cx="50%" cy="50%" r="42%"
@@ -216,7 +216,7 @@ export default function UserDashboard() {
                                 />
                             </svg>
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                <span className="text-4xl font-black text-slate-900 dark:text-white">{Math.round(progress)}%</span>
+                                <span className="text-2xl md:text-4xl font-black text-slate-900 dark:text-white">{Math.round(progress)}%</span>
                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Goal</span>
                             </div>
                         </div>

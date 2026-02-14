@@ -112,8 +112,8 @@ export default function SurahsPage() {
             </div>
 
             {/* Floating Header */}
-            <div className="sticky top-0 z-40 pt-4 px-4 sm:px-6">
-                <div className="max-w-7xl mx-auto bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-[2rem] border border-white/20 dark:border-white/10 shadow-lg shadow-black/5 p-4 sm:p-6 transition-all duration-300">
+            <div className="sticky top-0 z-40 pt-4 px-2 sm:px-6">
+                <div className="max-w-7xl mx-auto bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-[2rem] border border-white/20 dark:border-white/10 shadow-lg shadow-black/5 p-3 sm:p-6 transition-all duration-300">
 
                     {/* Top Row: Title & Actions */}
                     <div className="flex flex-col md:flex-row gap-6 md:items-center justify-between mb-6">
@@ -125,10 +125,10 @@ export default function SurahsPage() {
                                 <ArrowLeft size={20} />
                             </button>
                             <div>
-                                <h1 className="text-3xl font-black bg-gradient-to-r from-emerald-600 to-cyan-500 bg-clip-text text-transparent">
+                                <h1 className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-emerald-600 to-cyan-500 bg-clip-text text-transparent">
                                     Discover
                                 </h1>
-                                <p className="text-sm font-bold text-slate-500 dark:text-slate-400">
+                                <p className="text-[10px] sm:text-sm font-bold text-slate-500 dark:text-slate-400">
                                     {filteredSurahs.length} Surahs available
                                 </p>
                             </div>

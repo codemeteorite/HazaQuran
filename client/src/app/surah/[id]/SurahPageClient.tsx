@@ -65,12 +65,12 @@ export default function SurahPageClient({ id, view, info, verses }: SurahPageCli
                     <div className="text-center mb-16 relative">
                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
 
-                        <h1 className="relative text-6xl md:text-8xl font-uthmani mb-6 text-emerald-600 dark:text-emerald-400 drop-shadow-sm leading-relaxed">
+                        <h1 className="relative text-4xl sm:text-6xl md:text-8xl font-uthmani mb-6 text-emerald-600 dark:text-emerald-400 drop-shadow-sm leading-relaxed">
                             {info.bismillah_pre ? "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ" : info.name_arabic}
                         </h1>
 
                         <div className="flex flex-col items-center gap-2">
-                            <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+                            <h2 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
                                 {info.name_simple}
                             </h2>
                             <div className="flex items-center gap-4 text-slate-500 dark:text-slate-400">

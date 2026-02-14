@@ -4,8 +4,9 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAudioStore } from '@/store/audioStore';
 import { useSurahCache } from '@/hooks/useSurahCache';
+import ReciterSelect from '@/components/ReciterSelect';
 import { useAuthStore } from '@/store/authStore';
-import { ArrowLeft, Eye, EyeOff, Download, CheckCircle2, User, Loader2, Heart, Play } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, Download, CheckCircle2, User, Loader2, Heart, Play, MoreVertical } from 'lucide-react';
 import clsx from 'clsx';
 import { motion } from 'framer-motion';
 
@@ -57,14 +58,15 @@ export default function SurahHeader({ surahId, surahName, translatedName, verseC
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3 shrink-0">
+                <div className="flex items-center gap-2 shrink-0">
+
                     <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => downloadSurah(surahId, reciterUrl, verseCount)}
                         disabled={isCaching}
                         className={clsx(
-                            "hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all border",
+                            "flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 rounded-xl text-sm font-bold transition-all border",
                             isDone
                                 ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
                                 : isCaching
@@ -73,35 +75,19 @@ export default function SurahHeader({ surahId, surahName, translatedName, verseC
                         )}
                     >
                         {isDone ? (
-                            <>
-                                <CheckCircle2 size={18} />
-                                <span className="hidden lg:inline">Offline Ready</span>
-                            </>
+                            <CheckCircle2 size={18} />
                         ) : isCaching ? (
                             <>
                                 <Loader2 size={18} className="animate-spin" />
-                                <span className="hidden lg:inline">{cachingProgress}%</span>
+                                <span className="hidden xs:inline lg:inline">{cachingProgress}%</span>
                             </>
                         ) : (
-                            <>
-                                <Download size={18} />
-                                <span className="hidden lg:inline">Download</span>
-                            </>
+                            <Download size={18} />
                         )}
+                        <span className="hidden lg:inline ml-1">{isDone ? 'Offline Ready' : 'Download'}</span>
                     </motion.button>
 
-                    {/* Read Mode Button */}
-                    <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={onReadClick}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors border border-transparent"
-                    >
-                        <Eye size={18} />
-                        <span className="hidden lg:inline">Read</span>
-                    </motion.button>
-
-                    <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-slate-100/50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700/50">
+                    <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-100/50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700/50">
                         <motion.button
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
@@ -117,7 +103,7 @@ export default function SurahHeader({ surahId, surahName, translatedName, verseC
                                     : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
                             )}
                         >
-                            <Heart size={20} fill={isLiked ? "currentColor" : "none"} />
+                            <Heart size={18} fill={isLiked ? "currentColor" : "none"} />
                         </motion.button>
 
                         <motion.button
@@ -131,7 +117,7 @@ export default function SurahHeader({ surahId, surahName, translatedName, verseC
                                     : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
                             )}
                         >
-                            {isReadingMode ? <Eye size={20} /> : <EyeOff size={20} />}
+                            {isReadingMode ? <Eye size={18} /> : <EyeOff size={18} />}
                         </motion.button>
                     </div>
                 </div>

@@ -64,7 +64,7 @@ export default function HeroSection() {
                         <span>Experience the Holy Quran Reimagined</span>
                     </motion.div>
 
-                    <h1 className="text-6xl md:text-7xl lg:text-8xl font-black tracking-tight leading-tight">
+                    <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight leading-tight">
                         <span className="block bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900 dark:from-white dark:via-slate-200 dark:to-white bg-clip-text text-transparent">
                             Find Peace in
                         </span>
@@ -73,19 +73,19 @@ export default function HeroSection() {
                         </span>
                     </h1>
 
-                    <p className="max-w-2xl mx-auto text-xl md:text-2xl text-slate-600 dark:text-slate-300 font-medium leading-relaxed">
+                    <p className="max-w-2xl mx-auto text-lg md:text-xl lg:text-2xl text-slate-600 dark:text-slate-300 font-medium leading-relaxed px-4">
                         A handcrafted spiritual journey designed to uplift your soul.
                         Immerse yourself in the divine words with a vibrant, modern experience.
                     </p>
 
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8 px-6">
                         <motion.button
                             onClick={() => router.push('/surahs')}
                             whileHover={{ scale: 1.05, y: -2 }}
                             whileTap={{ scale: 0.95 }}
-                            className="group relative px-8 py-4 rounded-3xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-lg shadow-xl shadow-amber-500/30 hover:shadow-2xl hover:shadow-amber-500/50 transition-all duration-300 overflow-hidden"
+                            className="w-full sm:w-auto group relative px-8 py-4 rounded-3xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-lg shadow-xl shadow-amber-500/30 hover:shadow-2xl hover:shadow-amber-500/50 transition-all duration-300 overflow-hidden"
                         >
-                            <span className="relative z-10 flex items-center gap-2">
+                            <span className="relative z-10 flex items-center justify-center gap-2">
                                 Start Reading
                                 <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                             </span>
@@ -96,7 +96,7 @@ export default function HeroSection() {
                             onClick={() => router.push('/profile')}
                             whileHover={{ scale: 1.05, y: -2 }}
                             whileTap={{ scale: 0.95 }}
-                            className="group px-8 py-4 rounded-3xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-md text-slate-700 dark:text-slate-200 font-bold text-lg border-2 border-slate-200/50 dark:border-slate-700/50 hover:border-emerald-500/50 dark:hover:border-emerald-500/50 shadow-lg hover:shadow-emerald-500/20 transition-all duration-300 flex items-center gap-2"
+                            className="w-full sm:w-auto group px-8 py-4 rounded-3xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-md text-slate-700 dark:text-slate-200 font-bold text-lg border-2 border-slate-200/50 dark:border-slate-700/50 hover:border-emerald-500/50 dark:hover:border-emerald-500/50 shadow-lg hover:shadow-emerald-500/20 transition-all duration-300 flex items-center justify-center gap-2"
                         >
                             <BookOpen size={20} className="text-emerald-500 group-hover:scale-110 transition-transform" />
                             My Collection
